@@ -12,27 +12,27 @@ import scala.reflect.runtime.universe._
 
 private[datastore] trait ReflectionHelper extends DateTimeHelper {
 
-  val ByteClassName = classOf[Byte].getSimpleName
-  val IntClassName = classOf[Int].getSimpleName
-  val LongClassName = classOf[Long].getSimpleName
-  val FloatClassName = classOf[Float].getSimpleName
-  val DoubleClassName = classOf[Double].getSimpleName
-  val StringClassName = classOf[String].getSimpleName
-  val JavaUtilDateClassName = classOf[Date].getSimpleName
-  val BooleanClassName = classOf[Boolean].getSimpleName
-  val DatastoreDateTimeClassName = classOf[DateTime].getSimpleName
-  val DatastoreLatLongClassName = classOf[LatLng].getSimpleName
-  val DatastoreBlobClassName = classOf[Blob].getSimpleName
-  val LocalDateTimeClassName = classOf[LocalDateTime].getSimpleName
-  val ZonedDateTimeClassName = classOf[ZonedDateTime].getSimpleName
-  val OffsetDateTimeClassName = classOf[OffsetDateTime].getSimpleName
+  private val ByteClassName = classOf[Byte].getSimpleName
+  private val IntClassName = classOf[Int].getSimpleName
+  private val LongClassName = classOf[Long].getSimpleName
+  private val FloatClassName = classOf[Float].getSimpleName
+  private val DoubleClassName = classOf[Double].getSimpleName
+  private val StringClassName = classOf[String].getSimpleName
+  private val JavaUtilDateClassName = classOf[Date].getSimpleName
+  private val BooleanClassName = classOf[Boolean].getSimpleName
+  private val DatastoreDateTimeClassName = classOf[DateTime].getSimpleName
+  private val DatastoreLatLongClassName = classOf[LatLng].getSimpleName
+  private val DatastoreBlobClassName = classOf[Blob].getSimpleName
+  private val LocalDateTimeClassName = classOf[LocalDateTime].getSimpleName
+  private val ZonedDateTimeClassName = classOf[ZonedDateTime].getSimpleName
+  private val OffsetDateTimeClassName = classOf[OffsetDateTime].getSimpleName
 
-  def extractRuntimeClass[E: TypeTag](): RuntimeClass = {
+  private[datastore] def extractRuntimeClass[E: TypeTag](): RuntimeClass = {
     val mirror = runtimeMirror(getClass.getClassLoader)
     mirror.runtimeClass(typeOf[E].typeSymbol.asClass)
   }
 
-  def instanceToDatastoreEntity[E](key: Key[E], classInstance: E, clazz: Class[_]): Entity = {
+  private[datastore] def instanceToDatastoreEntity[E](key: Key[E], classInstance: E, clazz: Class[_]): Entity = {
     var builder = Entity.newBuilder(key.key)
     clazz.getDeclaredFields
       .filterNot(_.isSynthetic)
@@ -61,7 +61,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     builder.build()
   }
 
-  def datastoreEntityToInstance[E](entity: Entity, clazz: Class[_]): E = {
+  private[datastore] def datastoreEntityToInstance[E](entity: Entity, clazz: Class[_]): E = {
     //TODO: Try to get rid of default constructor requirement
     val defaultInstance = clazz.newInstance()
     val fields = clazz.getDeclaredFields.filterNot(_.isSynthetic)

@@ -6,49 +6,49 @@ import java.util.Date
 
 import com.google.cloud.datastore.DateTime
 
-trait DateTimeHelper {
+private[datastore] trait DateTimeHelper {
 
   private val localDateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
   private val zonedDateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
   private val offsetDateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-  def toMilliSeconds(date: Date): Long = {
+  private[datastore] def toMilliSeconds(date: Date): Long = {
     date.getTime
   }
 
-  def toMilliSeconds(dateTime: DateTime): Long = {
+  private[datastore] def toMilliSeconds(dateTime: DateTime): Long = {
     dateTime.getTimestampMillis
   }
 
-  def toJavaUtilDate(milliSeconds: Long): Date = {
+  private[datastore] def toJavaUtilDate(milliSeconds: Long): Date = {
     new Date(milliSeconds)
   }
 
-  def toDatastoreDateTime(milliSeconds: Long): DateTime = {
+  private[datastore] def toDatastoreDateTime(milliSeconds: Long): DateTime = {
     DateTime.copyFrom(toJavaUtilDate(milliSeconds))
   }
 
-  def formatLocalDateTime(localDateTime: LocalDateTime): String = {
+  private[datastore] def formatLocalDateTime(localDateTime: LocalDateTime): String = {
     localDateTimeFormatter.format(localDateTime)
   }
 
-  def formatZonedDateTime(zonedDateTime: ZonedDateTime): String = {
+  private[datastore] def formatZonedDateTime(zonedDateTime: ZonedDateTime): String = {
     zonedDateTimeFormatter.format(zonedDateTime)
   }
 
-  def formatOffsetDateTime(offsetDateTime: OffsetDateTime): String = {
+  private[datastore] def formatOffsetDateTime(offsetDateTime: OffsetDateTime): String = {
     offsetDateTimeFormatter.format(offsetDateTime)
   }
 
-  def parseLocalDateTime(timeString: String): LocalDateTime = {
+  private[datastore] def parseLocalDateTime(timeString: String): LocalDateTime = {
     LocalDateTime.parse(timeString, localDateTimeFormatter)
   }
 
-  def parseZonedDateTime(timeString: String): ZonedDateTime = {
+  private[datastore] def parseZonedDateTime(timeString: String): ZonedDateTime = {
     ZonedDateTime.parse(timeString, zonedDateTimeFormatter)
   }
 
-  def parseOffsetDateTime(timeString: String): OffsetDateTime = {
+  private[datastore] def parseOffsetDateTime(timeString: String): OffsetDateTime = {
     OffsetDateTime.parse(timeString, offsetDateTimeFormatter)
   }
 }
