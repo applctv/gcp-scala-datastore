@@ -36,6 +36,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     var builder = Entity.newBuilder(key.key)
     clazz.getDeclaredFields
       .filterNot(_.isSynthetic)
+      // Take all fields except the first one assuming it is an ID field, which is already encapsulated in the Key
       .tail
       .map(f => {
         f.setAccessible(true)
