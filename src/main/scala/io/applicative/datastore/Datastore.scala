@@ -23,11 +23,11 @@ trait Datastore {
 
   def update[E <: BaseEntity : TypeTag](entity: E): Future[Unit]
 
-  def update[E <: BaseEntity : TypeTag](entities: E*): Future[Unit]
+  def update[E <: BaseEntity : TypeTag](entities: List[E]): Future[Unit]
 
   def put[E <: BaseEntity : TypeTag](entity: E): Future[E]
 
-  def put[E <: BaseEntity : TypeTag](entities: E*): Future[List[E]]
+  def put[E <: BaseEntity : TypeTag](entities: List[E]): Future[List[E]]
 
   def delete[E: TypeTag](keys: Key*): Future[Unit]
 

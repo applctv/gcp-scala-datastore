@@ -46,7 +46,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
     val clazz = extractRuntimeClass[E]()
     val datastoreEntity = instanceToDatastoreEntity(key, entity, clazz)
     val e = cloudDataStore.add(datastoreEntity)
-    datastoreEntityToInstance(e, clazz)
+    datastoreEntityToInstance[E](e, clazz)
   }
 
   override def add[E: TypeTag](ke: Map[Key, E]): Future[List[E]] = Future {
@@ -54,7 +54,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
     val clazz = extractRuntimeClass[E]()
     val entities = ke.map { case (k, v) => instanceToDatastoreEntity(k, v, clazz) }
     val es = cloudDataStore.add(entities.toArray: _*)
-    es.toList.map(datastoreEntityToInstance(_, clazz))
+    es.toList.map(datastoreEntityToInstance[E](_, clazz))
   }
   override def get[E: TypeTag](id: Long): Future[Option[E]] = Future {
     wrapGet[E](id)
@@ -73,22 +73,22 @@ class DatastoreService extends Datastore with ReflectionHelper {
   }
 
   override def update[E <: BaseEntity : TypeTag](entity: E): Future[Unit] = {
-    update(entity)
+    update[E](List(entity))
   }
 
-  override def update[E <: BaseEntity : TypeTag](entities: E*): Future[Unit] = Future {
-    val es = convert(entities)
+  override def update[E <: BaseEntity : TypeTag](entities: List[E]): Future[Unit] = Future {
+    val es = convert[E](entities)
     cloudDataStore.update(es: _*)
   }
 
   override def put[E <: BaseEntity : TypeTag](entity: E): Future[E] = {
-    put(entity).map(_ => entity)
+    put(List(entity)).map(_ => entity)
   }
 
-  override def put[E <: BaseEntity : TypeTag](entities: E*): Future[List[E]] = Future {
-    val es = convert(entities)
+  override def put[E <: BaseEntity : TypeTag](entities: List[E]): Future[List[E]] = Future {
+    val es = convert[E](entities)
     cloudDataStore.put(es: _*)
-    entities.toList
+    entities
   }
 
   override def delete[E: TypeTag](keys: Key*): Future[Unit] = Future {
@@ -107,7 +107,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
   }
 
   override def fetch[E: TypeTag, K](ids: List[K]): Future[List[Option[E]]] = Future {
-    wrapFetch(ids)
+    wrapFetch[E](ids)
   }
 
 
@@ -119,7 +119,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
     cloudDataStore
       .fetch(javaIterable)
       .asScala
-      .map { Option(_).map(datastoreEntityToInstance(_, clazz)) }
+      .map { Option(_).map(datastoreEntityToInstance[E](_, clazz)) }
       .toList
   }
 
@@ -131,7 +131,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
     val scalaIterator = cloudDataStore
       .get(javaIterable)
       .asScala
-      .map(datastoreEntityToInstance(_, clazz))
+      .map(datastoreEntityToInstance[E](_, clazz))
     scalaIterator
   }
 
@@ -145,7 +145,7 @@ class DatastoreService extends Datastore with ReflectionHelper {
       case key: Key => key.key
     }
     val entity = Option(cloudDataStoreReader.get(key))
-    entity.map(datastoreEntityToInstance(_, clazz))
+    entity.map(datastoreEntityToInstance[E](_, clazz))
   }
 
   private def getKeyFactory(kind: String) = {
@@ -164,12 +164,12 @@ class DatastoreService extends Datastore with ReflectionHelper {
     clazz.getCanonicalName
   }
 
-  private def createKey[E <: BaseEntity](id: Any, kind: String) = {
+  private def createKey(id: Any, kind: String) = {
     val cloudKey = id match {
       case id: String => getKeyFactory(kind).newKey(id)
       case id: Long => getKeyFactory(kind).newKey(id)
       case id: Int => getKeyFactory(kind).newKey(id)
-      case id => throw UnsupportedIdTypeException(id.getClass.getCanonicalName)
+      case otherId => throw UnsupportedIdTypeException(otherId.getClass.getCanonicalName)
     }
     Key(cloudKey)
   }

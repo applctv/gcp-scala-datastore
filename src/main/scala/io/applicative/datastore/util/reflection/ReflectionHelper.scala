@@ -5,7 +5,7 @@ import java.util.Date
 
 import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng}
 import io.applicative.datastore.Key
-import io.applicative.datastore.exception.UnsupportedFieldTypeException
+import io.applicative.datastore.exception.{MissedEmptyConstructorException, MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
 
 import scala.reflect.runtime.universe._
@@ -29,7 +29,11 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
 
   private[datastore] def extractRuntimeClass[E: TypeTag](): RuntimeClass = {
     val mirror = runtimeMirror(getClass.getClassLoader)
-    mirror.runtimeClass(typeOf[E].typeSymbol.asClass)
+    val runtimeClass = mirror.runtimeClass(typeOf[E].typeSymbol.asClass)
+    if (runtimeClass == classOf[Nothing]) {
+      throw MissedTypeParameterException()
+    }
+    runtimeClass
   }
 
   private[datastore] def instanceToDatastoreEntity[E](key: Key, classInstance: E, clazz: Class[_]): Entity = {
@@ -64,7 +68,13 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
 
   private[datastore] def datastoreEntityToInstance[E](entity: Entity, clazz: Class[_]): E = {
     //TODO: Try to get rid of default constructor requirement
-    val defaultInstance = clazz.newInstance()
+    val defaultInstance = try {
+      clazz.newInstance()
+    } catch {
+      case e: InstantiationException => e.getCause match {
+        case e1: NoSuchMethodException => throw MissedEmptyConstructorException(clazz.getCanonicalName)
+      }
+    }
     val fields = clazz.getDeclaredFields.filterNot(_.isSynthetic)
     val idField = fields.head
     idField.setAccessible(true)
