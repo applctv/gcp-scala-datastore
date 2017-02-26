@@ -32,7 +32,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     mirror.runtimeClass(typeOf[E].typeSymbol.asClass)
   }
 
-  private[datastore] def instanceToDatastoreEntity[E](key: Key[E], classInstance: E, clazz: Class[_]): Entity = {
+  private[datastore] def instanceToDatastoreEntity[E](key: Key, classInstance: E, clazz: Class[_]): Entity = {
     var builder = Entity.newBuilder(key.key)
     clazz.getDeclaredFields
       .filterNot(_.isSynthetic)
