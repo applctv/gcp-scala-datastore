@@ -1,5 +1,4 @@
 package io.applicative.datastore
-import javax.inject.Singleton
 
 import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, KeyFactory, Transaction, Datastore => CloudDataStore, Key => CloudKey}
 import io.applicative.datastore.exception.UnsupportedIdTypeException
@@ -11,8 +10,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.runtime.universe._
 
-@Singleton
-class DatastoreService extends Datastore with ReflectionHelper {
+object DatastoreService extends Datastore with ReflectionHelper {
 
   private var _cloudDataStore: CloudDataStore = DatastoreOptions.getDefaultInstance.getService
 
@@ -184,5 +182,3 @@ class DatastoreService extends Datastore with ReflectionHelper {
   }
 
 }
-
-object DatastoreService extends DatastoreService
