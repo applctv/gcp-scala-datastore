@@ -18,7 +18,7 @@ class ReflectionHelperSpec extends Specification with Mockito {
     }
 
     "convert objects with supported fields to com.google.cloud.datastore.Entity" in {
-      val key = Key[TestClass](CloudKey.newBuilder("test", "TestClass", "test").build())
+      val key = Key(CloudKey.newBuilder("test", "TestClass", "test").build())
       val entity = helper.instanceToDatastoreEntity(key, testInstance, classOf[TestClass])
       entity.hasKey shouldEqual true
       entity.getNames.size() shouldEqual 13
@@ -32,7 +32,7 @@ class ReflectionHelperSpec extends Specification with Mockito {
     }
 
     "convert com.google.cloud.datastore.Entity to object type E" in {
-      val key = Key[TestClass](CloudKey.newBuilder("test", "TestClass", "test").setId(testInstance.id).build())
+      val key = Key(CloudKey.newBuilder("test", "TestClass", "test").setId(testInstance.id).build())
       val clazz = classOf[TestClass]
       val entity = helper.instanceToDatastoreEntity(key, testInstance, clazz)
       val res = helper.datastoreEntityToInstance[TestClass](entity, clazz)
