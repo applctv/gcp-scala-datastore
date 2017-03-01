@@ -3,56 +3,65 @@ package io.applicative.datastore
 import java.util.Date
 
 import com.google.cloud.datastore.EntityQuery.Builder
-import com.google.cloud.datastore.{Blob, DateTime}
+import com.google.cloud.datastore.{Blob, DateTime, Query}
 import com.google.cloud.datastore.StructuredQuery.{CompositeFilter, PropertyFilter}
 import io.applicative.datastore.exception.UnsupportedFieldTypeException
 import io.applicative.datastore.util.DateTimeHelper
+import io.applicative.datastore.util.reflection.ReflectionHelper
 
 import scala.reflect.runtime.universe._
 
 package object query {
 
   def select[E <: BaseEntity : TypeTag] = {
-    val builder = new Builder
-    SelectClause[E](builder)
+    val builder = Query.newEntityQueryBuilder()
+    new SelectClause[E](builder)
   }
 
   implicit def anyToProperty(a: Any): Property = Property(a)
 
 
-  sealed abstract class Clause[E <: BaseEntity : TypeTag]() {
+  sealed abstract class Clause[E <: BaseEntity : TypeTag]() extends ReflectionHelper {
     protected val builder: Builder
-    protected var filters: List[PropertyFilter]
+    protected val filters: List[PropertyFilter]
     def asList: List[E] = {
-      val query = builder.build()
-      DatastoreService.runQueryForList[E](query)
+      val kind = extractRuntimeClass[E]().getCanonicalName
+      builder.setKind(kind)
+      filters match {
+        case head :: Nil => builder.setFilter(head)
+        case head :: tail => builder.setFilter(CompositeFilter.and(head, tail: _*))
+        case Nil =>
+      }
+      DatastoreService.runQueryForList[E](builder.build())
     }
 
     def asSingle: Option[E] = {
+      val kind = extractRuntimeClass[E]().getCanonicalName
+      builder.setKind(kind)
       filters match {
+        case head :: Nil => builder.setFilter(head)
         case head :: tail => builder.setFilter(CompositeFilter.and(head, tail: _*))
-        case Nil => // do nothing
+        case Nil =>
       }
-      val query = builder.build()
-      DatastoreService.runQueryForSingleOpt[E](query)
+      DatastoreService.runQueryForSingleOpt[E](builder.build())
     }
   }
 
 
-  case class SelectClause[T <: BaseEntity : TypeTag] (override protected val builder: Builder) extends Clause[T] {
-    override protected var filters: List[PropertyFilter] = List()
+  class SelectClause[T <: BaseEntity : TypeTag] (override protected val builder: Builder) extends Clause[T] {
+    override protected val filters: List[PropertyFilter] = List.empty[PropertyFilter]
 
     def where(filter: PropertyFilter): AndSelectClause[T] = {
-      AndSelectClause(builder, List(filter))
+      new AndSelectClause(builder, List(filter))
     }
   }
 
-  case class AndSelectClause[T <: BaseEntity : TypeTag](
-                                                        override protected val builder: Builder,
-                                                        override protected val filters: List[PropertyFilter]
-                                                       ) extends SelectClause(builder) {
+  class AndSelectClause[T <: BaseEntity : TypeTag](
+                                                    override protected val builder: Builder,
+                                                    override protected val filters: List[PropertyFilter]
+                                                  ) extends SelectClause(builder) {
     def and(filter: PropertyFilter) = {
-      AndSelectClause(builder, filters :+ filter)
+      new AndSelectClause(builder, filters :+ filter)
     }
   }
 
