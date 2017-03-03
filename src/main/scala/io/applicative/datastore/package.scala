@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.google.cloud.datastore.EntityQuery.Builder
 import com.google.cloud.datastore.{Blob, DateTime, Query}
-import com.google.cloud.datastore.StructuredQuery.{CompositeFilter, PropertyFilter}
+import com.google.cloud.datastore.StructuredQuery.{CompositeFilter, OrderBy, PropertyFilter}
 import io.applicative.datastore.exception.UnsupportedFieldTypeException
 import io.applicative.datastore.util.DateTimeHelper
 import io.applicative.datastore.util.reflection.ReflectionHelper
@@ -21,21 +21,29 @@ package object query {
   implicit def anyToProperty(a: Any): Property = Property(a)
 
 
-  sealed abstract class Clause[E <: BaseEntity : TypeTag]() extends ReflectionHelper {
-    protected val builder: Builder
+  sealed abstract class Clause[E <: BaseEntity : TypeTag](protected val builder: Builder) extends ReflectionHelper {
     protected val filters: List[PropertyFilter]
+    private var orders: List[OrderInstance] = List()
+
+    def ascOrderBy(field: String): Clause[E] = {
+      this.orders = this.orders :+ OrderInstance(field, Asc)
+      this
+    }
+
+    def descOrderBy(field: String): Clause[E] = {
+      this.orders = this.orders :+ OrderInstance(field, Desc)
+      this
+    }
+
     def asList: List[E] = {
-      val kind = extractRuntimeClass[E]().getCanonicalName
-      builder.setKind(kind)
-      filters match {
-        case head :: Nil => builder.setFilter(head)
-        case head :: tail => builder.setFilter(CompositeFilter.and(head, tail: _*))
-        case Nil =>
-      }
-      DatastoreService.runQueryForList[E](builder.build())
+      DatastoreService.runQueryForList[E](build())
     }
 
     def asSingle: Option[E] = {
+      DatastoreService.runQueryForSingleOpt[E](build())
+    }
+
+    private def build() = {
       val kind = extractRuntimeClass[E]().getCanonicalName
       builder.setKind(kind)
       filters match {
@@ -43,29 +51,37 @@ package object query {
         case head :: tail => builder.setFilter(CompositeFilter.and(head, tail: _*))
         case Nil =>
       }
-      DatastoreService.runQueryForSingleOpt[E](builder.build())
+      orders foreach {
+        case OrderInstance(field, Asc) => builder.addOrderBy(OrderBy.asc(field))
+        case OrderInstance(field, Desc) => builder.addOrderBy(OrderBy.desc(field))
+      }
+      builder.build()
     }
   }
 
+  private sealed trait Order
+  private object Asc extends Order
+  private object Desc extends Order
+  private case class OrderInstance(field: String, order: Order)
 
-  class SelectClause[T <: BaseEntity : TypeTag] (override protected val builder: Builder) extends Clause[T] {
+
+  class SelectClause[E <: BaseEntity : TypeTag] (override protected val builder: Builder
+                                                ) extends Clause[E](builder) {
     override protected val filters: List[PropertyFilter] = List.empty[PropertyFilter]
 
-    def where(filter: PropertyFilter): AndSelectClause[T] = {
-      new AndSelectClause(builder, List(filter))
+    def where(filter: PropertyFilter): AndSelectClause[E] = {
+      new AndSelectClause[E](builder, List(filter))
     }
   }
 
-  class AndSelectClause[T <: BaseEntity : TypeTag](
+  class AndSelectClause[E <: BaseEntity : TypeTag](
                                                     override protected val builder: Builder,
                                                     override protected val filters: List[PropertyFilter]
-                                                  ) extends SelectClause(builder) {
+                                                  ) extends Clause[E](builder) {
     def and(filter: PropertyFilter) = {
-      new AndSelectClause(builder, filters :+ filter)
+      new AndSelectClause[E](builder, filters :+ filter)
     }
   }
-
-  case class PropertyNameValue(name: Any, value: Any)
 
   case class Property(value: Any) extends DateTimeHelper {
 

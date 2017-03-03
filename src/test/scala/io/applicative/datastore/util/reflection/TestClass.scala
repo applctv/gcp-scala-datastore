@@ -4,6 +4,7 @@ import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.Date
 
 import com.google.cloud.datastore.{Blob, DateTime, LatLng}
+import io.applicative.datastore.BaseEntity
 
 case class TestClass(
                       id: Long = Long.MaxValue,
@@ -20,7 +21,7 @@ case class TestClass(
                       latLangVal: LatLng = LatLng.of(42.42, 42.42),
                       blobVal: Blob = Blob.copyFrom(Array[Byte](1, 2, 3)),
                       boolVal: Boolean = true
-                    ) {
+                    ) extends BaseEntity {
   def this() = this(Long.MinValue, Byte.MinValue, Int.MinValue, Float.MinValue, Double.MinValue, "",
     new Date(0), LocalDateTime.now(), ZonedDateTime.now(ZoneId.of("UTC").normalized()),
     OffsetDateTime.now(ZoneId.of("UTC").normalized()), DateTime.now(), LatLng.of(4, 2), Blob.copyFrom(Array[Byte](0)),
