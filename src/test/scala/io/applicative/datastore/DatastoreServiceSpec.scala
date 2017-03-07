@@ -9,7 +9,7 @@ import org.specs2.mutable.Specification
 
 class DatastoreServiceSpec extends Specification with Mockito {
   private val cloudDataStore = mock[CloudDataStore]
-  private val dataStoreService = new DatastoreService()
+  private val dataStoreService = DatastoreService
   dataStoreService.setCloudDataStore(cloudDataStore)
   private val testInstance = TestClass()
   type EE = ExecutionEnv

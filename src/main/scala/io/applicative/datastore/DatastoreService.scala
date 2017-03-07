@@ -1,9 +1,11 @@
 package io.applicative.datastore
 
-import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, KeyFactory, Transaction, Datastore => CloudDataStore, Key => CloudKey}
+import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, EntityQuery, KeyFactory, Transaction,
+                                   Datastore => CloudDataStore, Key => CloudKey}
 import io.applicative.datastore.exception.UnsupportedIdTypeException
 import io.applicative.datastore.util.reflection.ReflectionHelper
 
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -22,47 +24,47 @@ object DatastoreService extends Datastore with ReflectionHelper {
     _cloudDataStore = cloudDatastore
   }
 
-  override def newKey[E: TypeTag](): Future[Key] = Future {
+  override def newKey[E <: BaseEntity : TypeTag](): Future[Key] = Future {
     val kind = getKind[E]()
     val incompleteKey = getKeyFactory(kind).newKey()
     Key(cloudDataStore.allocateId(incompleteKey))
   }
 
-  override def newKey[E: TypeTag](name: String): Future[Key] = Future {
+  override def newKey[E <: BaseEntity : TypeTag](name: String): Future[Key] = Future {
     val kind = getKind[E]()
     val incompleteKey = getKeyFactory(kind).newKey(name)
     Key(cloudDataStore.allocateId(incompleteKey))
   }
 
-  override def newKey[E: TypeTag](id: Long): Future[Key] = Future {
+  override def newKey[E <: BaseEntity : TypeTag](id: Long): Future[Key] = Future {
     val kind = getKind[E]()
     val incompleteKey = getKeyFactory(kind).newKey(id)
     Key(cloudDataStore.allocateId(incompleteKey))
   }
 
-  override def add[E: TypeTag](key: Key, entity: E): Future[E] = Future {
+  override def add[E <: BaseEntity : TypeTag](key: Key, entity: E): Future[E] = Future {
     val clazz = extractRuntimeClass[E]()
     val datastoreEntity = instanceToDatastoreEntity(key, entity, clazz)
     val e = cloudDataStore.add(datastoreEntity)
     datastoreEntityToInstance[E](e, clazz)
   }
 
-  override def add[E: TypeTag](ke: Map[Key, E]): Future[List[E]] = Future {
+  override def add[E <: BaseEntity : TypeTag](ke: Map[Key, E]): Future[List[E]] = Future {
     cloudDataStore.update()
     val clazz = extractRuntimeClass[E]()
     val entities = ke.map { case (k, v) => instanceToDatastoreEntity(k, v, clazz) }
     val es = cloudDataStore.add(entities.toArray: _*)
     es.toList.map(datastoreEntityToInstance[E](_, clazz))
   }
-  override def get[E: TypeTag](id: Long): Future[Option[E]] = Future {
+  override def get[E <: BaseEntity : TypeTag](id: Long): Future[Option[E]] = Future {
     wrapGet[E](id)
   }
 
-  override def get[E: TypeTag](id: String): Future[Option[E]] = Future {
+  override def get[E <: BaseEntity : TypeTag](id: String): Future[Option[E]] = Future {
     wrapGet[E](id)
   }
 
-  override def get[E: TypeTag](key: Key): Future[Option[E]] = Future {
+  override def get[E <: BaseEntity : TypeTag](key: Key): Future[Option[E]] = Future {
     wrapGet[E](key)
   }
 
@@ -89,25 +91,51 @@ object DatastoreService extends Datastore with ReflectionHelper {
     entities
   }
 
-  override def delete[E: TypeTag](keys: Key*): Future[Unit] = Future {
+  override def delete[E <: BaseEntity : TypeTag](keys: Key*): Future[Unit] = Future {
     cloudDataStore.delete(keys.map(_.key): _*)
   }
 
-  override def delete[E: TypeTag](ids: List[Long]): Future[Unit] = Future {
+  override def delete[E <: BaseEntity : TypeTag](ids: List[Long]): Future[Unit] = Future {
     val kind = getKind[E]()
     val kf = getKeyFactory(kind)
     val keys = ids.map(i => Key(kf.newKey(i)))
     delete(keys: _*)
   }
 
-  override def getLazy[E: TypeTag, K](ids: List[K]): Future[Iterator[E]] = Future {
+  override def getLazy[E <: BaseEntity : TypeTag, K](ids: List[K]): Future[Iterator[E]] = Future {
     wrapLazyGet[E](ids)
   }
 
-  override def fetch[E: TypeTag, K](ids: List[K]): Future[List[Option[E]]] = Future {
+  override def fetch[E <: BaseEntity : TypeTag, K](ids: List[K]): Future[List[Option[E]]] = Future {
     wrapFetch[E](ids)
   }
 
+  private[datastore] def runQueryForSingleOpt[E <: BaseEntity : TypeTag](query: EntityQuery): Option[E] = {
+    val clazz = extractRuntimeClass[E]()
+    val cloudDataStoreReader: DatastoreReader = cloudDataStore
+    val results = cloudDataStoreReader.run(query)
+    if (results.hasNext) {
+      val entity = results.next()
+      Some(datastoreEntityToInstance[E](entity, clazz))
+    } else {
+      None
+    }
+  }
+
+  private[datastore] def runQueryForList[E <: BaseEntity : TypeTag](query: EntityQuery): List[E] = {
+    val clazz = extractRuntimeClass[E]()
+    val cloudDataStoreReader: DatastoreReader = cloudDataStore
+    val results = cloudDataStoreReader.run(query)
+    @tailrec
+    def iter(list: List[E]): List[E] = {
+      if (results.hasNext) {
+        iter(list:+ datastoreEntityToInstance[E](results.next, clazz))
+      } else {
+        list
+      }
+    }
+    iter(List())
+  }
 
   private def wrapFetch[E: TypeTag](ids: List[_]): List[Option[E]] = {
     val clazz = extractRuntimeClass[E]()
