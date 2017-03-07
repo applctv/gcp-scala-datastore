@@ -17,6 +17,8 @@ trait Datastore {
 
   def newTransaction: Future[Transaction]
 
+  def add[E <: BaseEntity : TypeTag](entity: E): Future[E]
+
   def add[E <: BaseEntity : TypeTag](key: Key, entity: E): Future[E]
 
   def add[E <: BaseEntity : TypeTag](ke: Map[Key, E]): Future[List[E]]

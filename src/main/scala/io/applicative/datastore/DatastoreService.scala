@@ -42,6 +42,15 @@ object DatastoreService extends Datastore with ReflectionHelper {
     Key(cloudDataStore.allocateId(incompleteKey))
   }
 
+  override def add[E <: BaseEntity : TypeTag](entity: E): Future[E] = Future {
+    val clazz = extractRuntimeClass[E]()
+    val kind = getKind(clazz)
+    val key = createKey(entity.id, kind)
+    val dataStoreEntity = instanceToDatastoreEntity(key, entity, clazz)
+    cloudDataStore.add(dataStoreEntity)
+    entity
+  }
+
   override def add[E <: BaseEntity : TypeTag](key: Key, entity: E): Future[E] = Future {
     val clazz = extractRuntimeClass[E]()
     val datastoreEntity = instanceToDatastoreEntity(key, entity, clazz)
