@@ -119,7 +119,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
     wrapFetch[E](ids)
   }
 
-  private[datastore] def runQueryForSingleOpt[E <: BaseEntity : TypeTag](query: EntityQuery): Option[E] = {
+  private[datastore] def runQueryForSingleOpt[E <: BaseEntity : TypeTag](query: EntityQuery): Future[Option[E]] = Future {
     val clazz = extractRuntimeClass[E]()
     val cloudDataStoreReader: DatastoreReader = cloudDataStore
     val results = cloudDataStoreReader.run(query)
@@ -131,7 +131,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
     }
   }
 
-  private[datastore] def runQueryForList[E <: BaseEntity : TypeTag](query: EntityQuery): List[E] = {
+  private[datastore] def runQueryForList[E <: BaseEntity : TypeTag](query: EntityQuery): Future[List[E]] = Future {
     val clazz = extractRuntimeClass[E]()
     val cloudDataStoreReader: DatastoreReader = cloudDataStore
     val results = cloudDataStoreReader.run(query)
