@@ -9,7 +9,7 @@ import io.applicative.datastore.exception.UnsupportedFieldTypeException
 import io.applicative.datastore.util.DateTimeHelper
 import io.applicative.datastore.util.reflection.ReflectionHelper
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.runtime.universe._
 
 package object query {
@@ -36,11 +36,11 @@ package object query {
       this
     }
 
-    def asList: Future[List[E]] = {
+    def asList(implicit ec: ExecutionContext): Future[List[E]] = {
       DatastoreService.runQueryForList[E](build())
     }
 
-    def asSingle: Future[Option[E]] = {
+    def asSingle(implicit ec: ExecutionContext): Future[Option[E]] = {
       DatastoreService.runQueryForSingleOpt[E](build())
     }
 
