@@ -3,7 +3,7 @@ package io.applicative.datastore.util.reflection
 import java.time.{LocalDateTime, OffsetDateTime, ZonedDateTime}
 import java.util.Date
 
-import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng, Key => CloudKey}
+import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng}
 import io.applicative.datastore.Key
 import io.applicative.datastore.exception.{MissedEmptyConstructorException, MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
