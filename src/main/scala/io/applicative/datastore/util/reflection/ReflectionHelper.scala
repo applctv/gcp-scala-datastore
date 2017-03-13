@@ -3,7 +3,7 @@ package io.applicative.datastore.util.reflection
 import java.time.{LocalDateTime, OffsetDateTime, ZonedDateTime}
 import java.util.Date
 
-import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng}
+import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng, Key => CloudKey}
 import io.applicative.datastore.Key
 import io.applicative.datastore.exception.{MissedEmptyConstructorException, MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
@@ -78,7 +78,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     val fields = clazz.getDeclaredFields.filterNot(_.isSynthetic)
     val idField = fields.head
     idField.setAccessible(true)
-    idField.set(defaultInstance, entity.getKey.getId)
+    idField.set(defaultInstance, entity.getKey.getNameOrId)
     fields.tail
       .foreach(f => {
         f.setAccessible(true)
