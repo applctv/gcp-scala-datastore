@@ -1,7 +1,7 @@
 package io.applicative.datastore.util.reflection
 
 import com.google.cloud.datastore.{Key => CloudKey}
-import io.applicative.datastore.Key
+import io.applicative.datastore.{BaseEntity, Key}
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 
@@ -38,6 +38,19 @@ class ReflectionHelperSpec extends Specification with Mockito {
       val res = helper.datastoreEntityToInstance[TestClass](entity, clazz)
       res shouldEqual testInstance
     }
+
+    "convert object of class with id of String type" in {
+      val testObj = TestClassWithStringId()
+      val key = Key(CloudKey.newBuilder("test", "TestClassWithStringId", "test").setName(testObj.id).build())
+      val clazz = classOf[TestClassWithStringId]
+      val entity = helper.instanceToDatastoreEntity(key, testObj, clazz)
+      val res = helper.datastoreEntityToInstance[TestClassWithStringId](entity, clazz)
+      res shouldEqual testObj
+    }
   }
 
+}
+
+case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity {
+  def this() = this("", -1)
 }

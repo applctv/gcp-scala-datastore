@@ -78,7 +78,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     val fields = clazz.getDeclaredFields.filterNot(_.isSynthetic)
     val idField = fields.head
     idField.setAccessible(true)
-    idField.set(defaultInstance, entity.getKey.getId)
+    idField.set(defaultInstance, entity.getKey.getNameOrId)
     fields.tail
       .foreach(f => {
         f.setAccessible(true)
