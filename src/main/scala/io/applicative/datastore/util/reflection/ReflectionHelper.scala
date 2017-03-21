@@ -1,31 +1,31 @@
 package io.applicative.datastore.util.reflection
 
-import java.time.{LocalDateTime, OffsetDateTime, ZonedDateTime}
+import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
 import java.util.Date
 
 import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng}
 import io.applicative.datastore.Key
-import io.applicative.datastore.exception.{MissedEmptyConstructorException, MissedTypeParameterException, UnsupportedFieldTypeException}
+import io.applicative.datastore.exception.{MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
 
 import scala.reflect.runtime.universe._
 
 private[datastore] trait ReflectionHelper extends DateTimeHelper {
 
-  private val ByteClassName = classOf[Byte].getSimpleName
-  private val IntClassName = classOf[Int].getSimpleName
-  private val LongClassName = classOf[Long].getSimpleName
-  private val FloatClassName = classOf[Float].getSimpleName
-  private val DoubleClassName = classOf[Double].getSimpleName
-  private val StringClassName = classOf[String].getSimpleName
-  private val JavaUtilDateClassName = classOf[Date].getSimpleName
-  private val BooleanClassName = classOf[Boolean].getSimpleName
-  private val DatastoreDateTimeClassName = classOf[DateTime].getSimpleName
-  private val DatastoreLatLongClassName = classOf[LatLng].getSimpleName
-  private val DatastoreBlobClassName = classOf[Blob].getSimpleName
-  private val LocalDateTimeClassName = classOf[LocalDateTime].getSimpleName
-  private val ZonedDateTimeClassName = classOf[ZonedDateTime].getSimpleName
-  private val OffsetDateTimeClassName = classOf[OffsetDateTime].getSimpleName
+  private val ByteClassName = classOf[Byte].getCanonicalName
+  private val IntClassName = classOf[Int].getCanonicalName
+  private val LongClassName = classOf[Long].getCanonicalName
+  private val FloatClassName = classOf[Float].getCanonicalName
+  private val DoubleClassName = classOf[Double].getCanonicalName
+  private val StringClassName = classOf[String].getCanonicalName
+  private val JavaUtilDateClassName = classOf[Date].getCanonicalName
+  private val BooleanClassName = classOf[Boolean].getCanonicalName
+  private val DatastoreDateTimeClassName = classOf[DateTime].getCanonicalName
+  private val DatastoreLatLongClassName = classOf[LatLng].getCanonicalName
+  private val DatastoreBlobClassName = classOf[Blob].getCanonicalName
+  private val LocalDateTimeClassName = classOf[LocalDateTime].getCanonicalName
+  private val ZonedDateTimeClassName = classOf[ZonedDateTime].getCanonicalName
+  private val OffsetDateTimeClassName = classOf[OffsetDateTime].getCanonicalName
 
   private[datastore] def extractRuntimeClass[E: TypeTag](): RuntimeClass = {
     val mirror = runtimeMirror(getClass.getClassLoader)
@@ -67,14 +67,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
   }
 
   private[datastore] def datastoreEntityToInstance[E](entity: Entity, clazz: Class[_]): E = {
-    //TODO: Try to get rid of default constructor requirement
-    val defaultInstance = try {
-      clazz.newInstance()
-    } catch {
-      case e: InstantiationException => e.getCause match {
-        case e1: NoSuchMethodException => throw MissedEmptyConstructorException(clazz.getCanonicalName)
-      }
-    }
+    val defaultInstance = createDefaultInstance[E](clazz)
     val fields = clazz.getDeclaredFields.filterNot(_.isSynthetic)
     val idField = fields.head
     idField.setAccessible(true)
@@ -82,7 +75,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     fields.tail
       .foreach(f => {
         f.setAccessible(true)
-        val value = f.getType.getSimpleName match {
+        val value = f.getType.getCanonicalName match {
           case ByteClassName => entity.getLong(f.getName).toByte
           case IntClassName => entity.getLong(f.getName).toInt
           case LongClassName => entity.getLong(f.getName)
@@ -102,5 +95,27 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
         f.set(defaultInstance, value)
       })
     defaultInstance.asInstanceOf[E]
+  }
+
+  private[datastore] def createDefaultInstance[E](clazz: Class[_]): E = {
+    val constructor = clazz.getConstructors.head
+    val params = constructor.getParameterTypes.map(cl => cl.getCanonicalName match {
+      case ByteClassName => Byte.MinValue
+      case IntClassName => Int.MinValue
+      case LongClassName => 0L
+      case StringClassName => ""
+      case FloatClassName => 0.0F
+      case DoubleClassName => 0.0
+      case BooleanClassName => false
+      case JavaUtilDateClassName => new Date(0)
+      case DatastoreDateTimeClassName => DateTime.copyFrom(new Date(0))
+      case LocalDateTimeClassName => LocalDateTime.MIN
+      case ZonedDateTimeClassName => ZonedDateTime.of(1900, 1, 1, 1, 1, 1, 1, ZoneOffset.UTC)
+      case OffsetDateTimeClassName => OffsetDateTime.MIN
+      case DatastoreLatLongClassName => LatLng.of(0.0, 0.0)
+      case DatastoreBlobClassName => Blob.copyFrom(Array[Byte]())
+      case fieldName => throw UnsupportedFieldTypeException(fieldName)
+    }).map(_.asInstanceOf[Object])
+    constructor.newInstance(params: _*).asInstanceOf[E]
   }
 }

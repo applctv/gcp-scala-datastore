@@ -47,10 +47,13 @@ class ReflectionHelperSpec extends Specification with Mockito {
       val res = helper.datastoreEntityToInstance[TestClassWithStringId](entity, clazz)
       res shouldEqual testObj
     }
+
+    "create default instance of any class with at least one public constructor" in {
+      helper.createDefaultInstance[TestClass1](classOf[TestClass1]) shouldEqual TestClass1(0L, "")
+    }
   }
 
 }
 
-case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity {
-  def this() = this("", -1)
-}
+case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity
+case class TestClass1(id: Long, name: String) extends BaseEntity
