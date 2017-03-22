@@ -10,11 +10,12 @@ import io.applicative.datastore.util.DateTimeHelper
 import io.applicative.datastore.util.reflection.ReflectionHelper
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 package object query {
 
-  def select[E <: BaseEntity : TypeTag] = {
+  def select[E <: BaseEntity : TypeTag : ClassTag] = {
     val builder = Query.newEntityQueryBuilder()
     new SelectClause[E](builder)
   }
@@ -22,7 +23,7 @@ package object query {
   implicit def anyToProperty(a: Any): Property = Property(a)
 
 
-  sealed abstract class Clause[E <: BaseEntity : TypeTag](protected val builder: Builder) extends ReflectionHelper {
+  sealed abstract class Clause[E <: BaseEntity : TypeTag : ClassTag](protected val builder: Builder) extends ReflectionHelper {
     protected val filters: List[PropertyFilter]
     private var orders: List[OrderInstance] = List()
 
@@ -66,7 +67,7 @@ package object query {
   private case class OrderInstance(field: String, order: Order)
 
 
-  class SelectClause[E <: BaseEntity : TypeTag] (override protected val builder: Builder
+  class SelectClause[E <: BaseEntity : TypeTag : ClassTag] (override protected val builder: Builder
                                                 ) extends Clause[E](builder) {
     override protected val filters: List[PropertyFilter] = List.empty[PropertyFilter]
 
@@ -75,7 +76,7 @@ package object query {
     }
   }
 
-  class AndSelectClause[E <: BaseEntity : TypeTag](
+  class AndSelectClause[E <: BaseEntity : TypeTag : ClassTag](
                                                     override protected val builder: Builder,
                                                     override protected val filters: List[PropertyFilter]
                                                   ) extends Clause[E](builder) {

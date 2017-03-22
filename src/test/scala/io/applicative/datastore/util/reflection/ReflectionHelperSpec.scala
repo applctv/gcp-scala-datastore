@@ -51,9 +51,33 @@ class ReflectionHelperSpec extends Specification with Mockito {
     "create default instance of any class with at least one public constructor" in {
       helper.createDefaultInstance[TestClass1](classOf[TestClass1]) shouldEqual TestClass1(0L, "")
     }
+
+    "convert instance with Some to datastore entity" in {
+      val key = Key(CloudKey.newBuilder("test", "TestClass2", "test").build())
+      val entity = helper.instanceToDatastoreEntity[TestClass2](key, TestClass2(1, Some("some")), classOf[TestClass2])
+      entity.getNames.size() shouldEqual 1
+      entity.getString("name") shouldEqual "some"
+    }
+
+    "convert instance with None to datastore entity" in {
+      val key = Key(CloudKey.newBuilder("test", "TestClass2", "test").build())
+      val entity = helper.instanceToDatastoreEntity[TestClass2](key, TestClass2(1, None), classOf[TestClass2])
+      entity.getNames.size() shouldEqual 1
+      entity.isNull("name") shouldEqual true
+    }
+
+    "convert datastore instance to class with Some" in {
+      val instance = TestClass2(1, Some("test"))
+      val key = Key(CloudKey.newBuilder("test", "TestClass", "test").setId(instance.id).build())
+      val clazz = classOf[TestClass2]
+      val entity = helper.instanceToDatastoreEntity(key, instance, clazz)
+      val res = helper.datastoreEntityToInstance[TestClass2](entity, clazz)
+      res shouldEqual instance
+    }
   }
 
 }
 
 case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity
 case class TestClass1(id: Long, name: String) extends BaseEntity
+case class TestClass2(id: Long, name: Option[String]) extends BaseEntity
