@@ -38,14 +38,21 @@ package object query {
     }
 
     def asList(implicit ec: ExecutionContext): Future[List[E]] = {
-      DatastoreService.runQueryForList[E](build())
+      val query = configureBuilder().build()
+      DatastoreService.runQueryForList[E](query)
+    }
+
+    def asList(limit: Int, offset: Int)(implicit ec: ExecutionContext): Future[List[E]] = {
+      val query = configureBuilder().setOffset(offset).setLimit(limit).build()
+      DatastoreService.runQueryForList[E](query)
     }
 
     def asSingle(implicit ec: ExecutionContext): Future[Option[E]] = {
-      DatastoreService.runQueryForSingleOpt[E](build())
+      val query = configureBuilder().build()
+      DatastoreService.runQueryForSingleOpt[E](query)
     }
 
-    private def build() = {
+    private def configureBuilder() = {
       val kind = extractRuntimeClass[E]().getCanonicalName
       builder.setKind(kind)
       filters match {
@@ -57,7 +64,7 @@ package object query {
         case OrderInstance(field, Asc) => builder.addOrderBy(OrderBy.asc(field))
         case OrderInstance(field, Desc) => builder.addOrderBy(OrderBy.desc(field))
       }
-      builder.build()
+      builder
     }
   }
 
