@@ -2,7 +2,7 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc6"
+version := "1.0-rc7"
 
 scalaVersion := "2.11.8"
 
@@ -37,7 +37,7 @@ pomExtra := (
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "com.google.cloud" % "google-cloud" % "0.8.0",
+  "com.google.cloud" % "google-cloud-datastore" % "1.3.1",
   "org.specs2" %% "specs2-core" % "3.8.8" % "test",
   "org.specs2" % "specs2-mock_2.11" % "3.8.8" % "test"
 )

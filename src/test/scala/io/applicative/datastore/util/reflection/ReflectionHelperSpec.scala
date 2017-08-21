@@ -27,7 +27,7 @@ class ReflectionHelperSpec extends Specification with Mockito {
       entity.getDouble("doubleVal") shouldEqual testInstance.doubleVal
       entity.getDouble("floatVal") shouldEqual testInstance.floatVal
       entity.getString("stringVal") shouldEqual testInstance.stringVal
-      entity.getDateTime("googleDateTimeVal") shouldEqual testInstance.googleDateTimeVal
+      entity.getTimestamp("googleDateTimeVal") shouldEqual testInstance.googleDateTimeVal
       entity.getBoolean("boolVal") shouldEqual testInstance.boolVal
     }
 

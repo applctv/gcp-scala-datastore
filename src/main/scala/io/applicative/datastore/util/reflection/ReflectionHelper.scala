@@ -3,7 +3,8 @@ package io.applicative.datastore.util.reflection
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
 import java.util.Date
 
-import com.google.cloud.datastore.{Blob, DateTime, Entity, LatLng}
+import com.google.cloud.Timestamp
+import com.google.cloud.datastore.{Blob, Entity, LatLng}
 import io.applicative.datastore.Key
 import io.applicative.datastore.exception.{MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
@@ -22,7 +23,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
   private val StringClassName = getClassName[String]()
   private val JavaUtilDateClassName = getClassName[Date]()
   private val BooleanClassName = getClassName[Boolean]()
-  private val DatastoreDateTimeClassName = getClassName[DateTime]()
+  private val DatastoreTimestampClassName = getClassName[Timestamp]()
   private val DatastoreLatLongClassName = getClassName[LatLng]()
   private val DatastoreBlobClassName = getClassName[Blob]()
   private val LocalDateTimeClassName = getClassName[LocalDateTime]()
@@ -66,7 +67,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
       case Field(name, value: Double) => builder.set(name, value)
       case Field(name, value: String) => builder.set(name, value)
       case Field(name, value: Date) => builder.set(name, toMilliSeconds(value))
-      case Field(name, value: DateTime) => builder.set(name, value)
+      case Field(name, value: Timestamp) => builder.set(name, value)
       case Field(name, value: LocalDateTime) => builder.set(name, formatLocalDateTime(value))
       case Field(name, value: OffsetDateTime) => builder.set(name, formatOffsetDateTime(value))
       case Field(name, value: ZonedDateTime) => builder.set(name, formatZonedDateTime(value))
@@ -119,7 +120,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
       case DoubleClassName => entity.getDouble(fieldName)
       case BooleanClassName => entity.getBoolean(fieldName)
       case JavaUtilDateClassName => toJavaUtilDate(entity.getLong(fieldName))
-      case DatastoreDateTimeClassName => entity.getDateTime(fieldName)
+      case DatastoreTimestampClassName => entity.getTimestamp(fieldName)
       case LocalDateTimeClassName => parseLocalDateTime(entity.getString(fieldName))
       case ZonedDateTimeClassName => parseZonedDateTime(entity.getString(fieldName))
       case OffsetDateTimeClassName => parseOffsetDateTime(entity.getString(fieldName))
@@ -140,7 +141,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
       case DoubleClassName => 0.0
       case BooleanClassName => false
       case JavaUtilDateClassName => new Date(0)
-      case DatastoreDateTimeClassName => DateTime.copyFrom(new Date(0))
+      case DatastoreTimestampClassName => Timestamp.of(new Date(0))
       case LocalDateTimeClassName => LocalDateTime.MIN
       case ZonedDateTimeClassName => ZonedDateTime.of(1900, 1, 1, 1, 1, 1, 1, ZoneOffset.UTC)
       case OffsetDateTimeClassName => OffsetDateTime.MIN
