@@ -1,10 +1,8 @@
 package io.applicative.datastore.util
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
+import java.time.{LocalDateTime, OffsetDateTime, ZonedDateTime}
 import java.util.Date
-
-import com.google.cloud.datastore.DateTime
 
 private[datastore] trait DateTimeHelper {
 
@@ -16,16 +14,8 @@ private[datastore] trait DateTimeHelper {
     date.getTime
   }
 
-  private[datastore] def toMilliSeconds(dateTime: DateTime): Long = {
-    dateTime.getTimestampMillis
-  }
-
   private[datastore] def toJavaUtilDate(milliSeconds: Long): Date = {
     new Date(milliSeconds)
-  }
-
-  private[datastore] def toDatastoreDateTime(milliSeconds: Long): DateTime = {
-    DateTime.copyFrom(toJavaUtilDate(milliSeconds))
   }
 
   private[datastore] def formatLocalDateTime(localDateTime: LocalDateTime): String = {

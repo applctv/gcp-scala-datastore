@@ -2,8 +2,9 @@ package io.applicative.datastore
 
 import java.util.Date
 
+import com.google.cloud.Timestamp
 import com.google.cloud.datastore.EntityQuery.Builder
-import com.google.cloud.datastore.{Blob, DateTime, Query}
+import com.google.cloud.datastore.{Blob, Query}
 import com.google.cloud.datastore.StructuredQuery.{CompositeFilter, OrderBy, PropertyFilter}
 import io.applicative.datastore.exception.UnsupportedFieldTypeException
 import io.applicative.datastore.util.DateTimeHelper
@@ -104,7 +105,7 @@ package object query {
         case (n: String, v: Double) => PropertyFilter.lt(n, v)
         case (n: String, v: String) => PropertyFilter.lt(n, v)
         case (n: String, v: Date) => PropertyFilter.lt(n, toMilliSeconds(v))
-        case (n: String, v: DateTime) => PropertyFilter.lt(n, v)
+        case (n: String, v: Timestamp) => PropertyFilter.lt(n, v)
         case (n: String, v: Blob) => PropertyFilter.lt(n, v)
         case (n, v) => throw UnsupportedFieldTypeException(v.getClass.getCanonicalName)
       }
@@ -120,7 +121,7 @@ package object query {
         case (n: String, v: Double) => PropertyFilter.gt(n, v)
         case (n: String, v: String) => PropertyFilter.gt(n, v)
         case (n: String, v: Date) => PropertyFilter.gt(n, toMilliSeconds(v))
-        case (n: String, v: DateTime) => PropertyFilter.gt(n, v)
+        case (n: String, v: Timestamp) => PropertyFilter.gt(n, v)
         case (n: String, v: Blob) => PropertyFilter.gt(n, v)
         case (n, v) => throw UnsupportedFieldTypeException(v.getClass.getCanonicalName)
       }
@@ -136,7 +137,7 @@ package object query {
         case (n: String, v: Double) => PropertyFilter.le(n, v)
         case (n: String, v: String) => PropertyFilter.le(n, v)
         case (n: String, v: Date) => PropertyFilter.le(n, toMilliSeconds(v))
-        case (n: String, v: DateTime) => PropertyFilter.le(n, v)
+        case (n: String, v: Timestamp) => PropertyFilter.le(n, v)
         case (n: String, v: Blob) => PropertyFilter.le(n, v)
         case (n, v) => throw UnsupportedFieldTypeException(v.getClass.getCanonicalName)
       }
@@ -152,7 +153,7 @@ package object query {
         case (n: String, v: Double) => PropertyFilter.ge(n, v)
         case (n: String, v: String) => PropertyFilter.ge(n, v)
         case (n: String, v: Date) => PropertyFilter.ge(n, toMilliSeconds(v))
-        case (n: String, v: DateTime) => PropertyFilter.ge(n, v)
+        case (n: String, v: Timestamp) => PropertyFilter.ge(n, v)
         case (n: String, v: Blob) => PropertyFilter.ge(n, v)
         case (n, v) => throw UnsupportedFieldTypeException(v.getClass.getCanonicalName)
       }
@@ -160,6 +161,14 @@ package object query {
 
     def |==|(another: Property) = {
       (value, another.value) match {
+        case (n: String, None) => PropertyFilter.isNull(n)
+        case (n: String, Some(v)) => regularValueEquality(v)
+        case (n, v) => regularValueEquality(v)
+      }
+    }
+
+    private def regularValueEquality(another: Any) = {
+      (value, another) match {
         case (n: String, v: Boolean) => PropertyFilter.eq(n, v)
         case (n: String, v: Byte) => PropertyFilter.eq(n, v)
         case (n: String, v: Int) => PropertyFilter.eq(n, v)
@@ -168,7 +177,7 @@ package object query {
         case (n: String, v: Double) => PropertyFilter.eq(n, v)
         case (n: String, v: String) => PropertyFilter.eq(n, v)
         case (n: String, v: Date) => PropertyFilter.eq(n, toMilliSeconds(v))
-        case (n: String, v: DateTime) => PropertyFilter.eq(n, v)
+        case (n: String, v: Timestamp) => PropertyFilter.eq(n, v)
         case (n: String, v: Blob) => PropertyFilter.eq(n, v)
         case (n, v) => throw UnsupportedFieldTypeException(v.getClass.getCanonicalName)
       }
