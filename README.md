@@ -58,3 +58,14 @@ val items2: Future[List[Item]] = select[Item]
                                   .asList
 val singleItem: Future[Option[Item]] = select[Item] where "name" |==| "foo" asSingle
 ```
+
+### Indexes
+By default, Cloud Datastore automatically predefines an index for each property of each entity kind(see https://cloud.google.com/datastore/docs/concepts/indexes for more details). <br>
+If you want to exclude any of your properties from the indexes, just add the annotation `@excludeFromIndexes`.
+
+```
+import io.applicative.datastore.BaseEntity
+import io.applicative.datastore.util.reflection.excludeFromIndexes
+
+case class Item(id: Long, name: String, price: Double, size: Int, brand: Option[String], @excludeFromIndexes description: String) extends BaseEntity
+```
