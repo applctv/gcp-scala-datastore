@@ -2,7 +2,7 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc7"
+version := "1.0-rc8"
 
 scalaVersion := "2.12.3"
 

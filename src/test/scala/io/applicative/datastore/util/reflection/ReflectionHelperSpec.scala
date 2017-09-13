@@ -1,6 +1,6 @@
 package io.applicative.datastore.util.reflection
 
-import com.google.cloud.datastore.{Key => CloudKey}
+import com.google.cloud.datastore.{Value, Key => CloudKey}
 import io.applicative.datastore.{BaseEntity, Key}
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
@@ -74,6 +74,15 @@ class ReflectionHelperSpec extends Specification with Mockito {
       val res = helper.datastoreEntityToInstance[TestClass2](entity, clazz)
       res shouldEqual instance
     }
+
+    "correctly convert instance with fields that are excluded from datastore indexes" in {
+      val instance = TestClass3(1, 1, Some("test"), "not_indexed_test")
+      val key = Key(CloudKey.newBuilder("test", "TestClass3", instance.id).build())
+      val entity = helper.instanceToDatastoreEntity[TestClass3](key, instance, classOf[TestClass3])
+      entity.getString("name") shouldEqual instance.name.get
+      entity.getValue[Value[_]]("notIndexedString").excludeFromIndexes() shouldEqual true
+      entity.getValue[Value[_]]("name").excludeFromIndexes() shouldEqual false
+    }
   }
 
 }
@@ -81,3 +90,4 @@ class ReflectionHelperSpec extends Specification with Mockito {
 case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity
 case class TestClass1(id: Long, name: String) extends BaseEntity
 case class TestClass2(id: Long, name: Option[String]) extends BaseEntity
+case class TestClass3(id: Long, number: Long, name: Option[String], @excludeFromIndexes notIndexedString: String)

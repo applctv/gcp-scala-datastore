@@ -4,7 +4,7 @@ import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
 import java.util.Date
 
 import com.google.cloud.Timestamp
-import com.google.cloud.datastore.{Blob, Entity, LatLng}
+import com.google.cloud.datastore._
 import io.applicative.datastore.Key
 import io.applicative.datastore.exception.{MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
@@ -39,41 +39,110 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
     runtimeClass
   }
 
-  private[datastore] def instanceToDatastoreEntity[E](key: Key, classInstance: E, clazz: Class[_]): Entity = {
+  private[datastore] def instanceToDatastoreEntity[E: TypeTag : ClassTag](key: Key, classInstance: E, clazz: Class[_])(implicit tt: TypeTag[E]): Entity = {
     var builder = Entity.newBuilder(key.key)
+    val primaryConstructor = clazz.getConstructors.head
+    var paramCounter = -1
+    val annotates = primaryConstructor
+      .getParameters
+      .tail
+      .map { p =>
+        paramCounter += 1
+        (paramCounter, p.isAnnotationPresent(classOf[excludeFromIndexes]))
+      }
+      .toMap
+    paramCounter = -1
     clazz.getDeclaredFields
       .filterNot(_.isSynthetic)
       // Take all fields except the first one assuming it is an ID field, which is already encapsulated in the Key
       .tail
       .map(f => {
+        paramCounter += 1
+        val excludeFromIndexes = annotates(paramCounter)
         f.setAccessible(true)
-        Field(f.getName, f.get(classInstance))
+        Field(f.getName, f.get(classInstance), excludeFromIndexes)
       })
       .foreach {
-        case Field(name, Some(value: Any)) => builder = setValue(Field(name, value), builder)
-        case Field(name, None) => builder.setNull(name)
-        case field => builder = setValue(field, builder)
+        case Field(name, Some(value: Any), excludeFromIndexes) =>
+          builder = setValue(Field(name, value, excludeFromIndexes), builder)
+        case Field(name, None, _) =>
+          builder.setNull(name)
+        case field => builder =
+          setValue(field, builder)
       }
     builder.build()
   }
 
   private def setValue(field: Field[_], builder: Entity.Builder) = {
+    def setLongValue(name: String, value: Long, excludeFromIndexes: Boolean) = {
+      val longValue = LongValue
+        .newBuilder(value)
+        .setExcludeFromIndexes(excludeFromIndexes)
+        .build()
+      builder.set(name, longValue)
+    }
+
+    def setDoubleValue(name: String, value: Double, excludeFromIndexes: Boolean) = {
+      val doubleValue = DoubleValue
+        .newBuilder(value)
+        .setExcludeFromIndexes(excludeFromIndexes)
+        .build()
+      builder.set(name, doubleValue)
+    }
+
+    def setStringValue(name: String, value: String, excludeFromIndexes: Boolean) = {
+      val stringValue = StringValue
+        .newBuilder(value)
+        .setExcludeFromIndexes(excludeFromIndexes)
+        .build()
+      builder.set(name, stringValue)
+    }
+
     field match {
-      case Field(name, value: Boolean) => builder.set(name, value)
-      case Field(name, value: Byte) => builder.set(name, value)
-      case Field(name, value: Int) => builder.set(name, value)
-      case Field(name, value: Long) => builder.set(name, value)
-      case Field(name, value: Float) => builder.set(name, value)
-      case Field(name, value: Double) => builder.set(name, value)
-      case Field(name, value: String) => builder.set(name, value)
-      case Field(name, value: Date) => builder.set(name, toMilliSeconds(value))
-      case Field(name, value: Timestamp) => builder.set(name, value)
-      case Field(name, value: LocalDateTime) => builder.set(name, formatLocalDateTime(value))
-      case Field(name, value: OffsetDateTime) => builder.set(name, formatOffsetDateTime(value))
-      case Field(name, value: ZonedDateTime) => builder.set(name, formatZonedDateTime(value))
-      case Field(name, value: LatLng) => builder.set(name, value)
-      case Field(name, value: Blob) => builder.set(name, value)
-      case Field(name, value) => throw UnsupportedFieldTypeException(value.getClass.getCanonicalName)
+      case Field(name, value: Boolean, excludeFromIndexes) =>
+        val booleanValue = BooleanValue.newBuilder(value).setExcludeFromIndexes(excludeFromIndexes).build()
+        builder.set(name, booleanValue)
+      case Field(name, value: Byte, excludeFromIndexes) =>
+        setLongValue(name, value, excludeFromIndexes)
+      case Field(name, value: Int, excludeFromIndexes) =>
+        setLongValue(name, value, excludeFromIndexes)
+      case Field(name, value: Long, excludeFromIndexes) =>
+        setLongValue(name, value, excludeFromIndexes)
+      case Field(name, value: Float, excludeFromIndexes) =>
+        setDoubleValue(name, value, excludeFromIndexes)
+      case Field(name, value: Double, excludeFromIndexes) =>
+        setDoubleValue(name, value, excludeFromIndexes)
+      case Field(name, value: String, excludeFromIndexes) =>
+        setStringValue(name, value, excludeFromIndexes)
+      case Field(name, value: Date, excludeFromIndexes) =>
+        setLongValue(name, toMilliSeconds(value), excludeFromIndexes)
+      case Field(name, value: Timestamp, excludeFromIndexes) =>
+        val tsValue = TimestampValue
+          .newBuilder(value)
+          .setExcludeFromIndexes(excludeFromIndexes)
+          .build()
+        builder.set(name, tsValue)
+      case Field(name, value: LocalDateTime, excludeFromIndexes) =>
+        //TODO: come up with better way to store the objects from the java.time package.
+        // Current implementation does not allow to use filtering for the objects of these types.
+        setStringValue(name, formatLocalDateTime(value), excludeFromIndexes)
+      case Field(name, value: OffsetDateTime, excludeFromIndexes) =>
+        setStringValue(name, formatOffsetDateTime(value), excludeFromIndexes)
+      case Field(name, value: ZonedDateTime, excludeFromIndexes) =>
+        setStringValue(name, formatZonedDateTime(value), excludeFromIndexes)
+      case Field(name, value: LatLng, excludeFromIndexes) =>
+        val latLngValue = LatLngValue
+          .newBuilder(value)
+          .setExcludeFromIndexes(excludeFromIndexes)
+          .build()
+        builder.set(name, latLngValue)
+      case Field(name, value: Blob, excludeFromIndexes) =>
+        val blobValue = BlobValue
+          .newBuilder(value)
+          .setExcludeFromIndexes(excludeFromIndexes)
+          .build()
+        builder.set(name, blobValue)
+      case Field(name, value, _) => throw UnsupportedFieldTypeException(value.getClass.getCanonicalName)
     }
   }
 
