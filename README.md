@@ -69,3 +69,23 @@ import io.applicative.datastore.util.reflection.excludeFromIndexes
 
 case class Item(id: Long, name: String, price: Double, size: Int, brand: Option[String], @excludeFromIndexes description: String) extends BaseEntity
 ```
+
+### Installation using sbt
+
+In order to install this package you will need set an extra resolver in `build.sbt`:
+
+```
+resolvers ++= Seq(
+  "applctv-bintray" at "https://dl.bintray.com/applctv/gcp-scala-datastore/"
+)
+```
+
+And then you can add it as a normal sbt dependency:
+
+```
+libraryDependencies ++= Seq(
+  "io.applicative" %% "datastore-scala-wrapper" % "1.0-rc8"
+)
+```
+
+
