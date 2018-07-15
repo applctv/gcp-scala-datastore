@@ -2,7 +2,7 @@ package io.applicative.datastore
 
 import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, EntityQuery, KeyFactory, Transaction, Datastore => CloudDataStore, Key => CloudKey}
 import io.applicative.datastore.exception.UnsupportedIdTypeException
-import io.applicative.datastore.util.reflection.{DatastoreKey, ReflectionHelper}
+import io.applicative.datastore.util.reflection.{Kind, ReflectionHelper}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -196,7 +196,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
   }
 
   private[datastore] def getKindByClass(clazz: Class[_]): String = {
-    Option(clazz.getDeclaredAnnotation(classOf[DatastoreKey])) match {
+    Option(clazz.getDeclaredAnnotation(classOf[Kind])) match {
       case Some(customKeyAnnotation) if customKeyAnnotation.value() != null && customKeyAnnotation.value().nonEmpty =>
         customKeyAnnotation.value()
       case _ =>
