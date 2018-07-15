@@ -21,5 +21,11 @@ case class TestClass(
                       googleDateTimeVal: Timestamp = Timestamp.of(new Date()),
                       latLangVal: LatLng = LatLng.of(42.42, 42.42),
                       blobVal: Blob = Blob.copyFrom(Array[Byte](1, 2, 3)),
-                      boolVal: Boolean = true
+                      boolVal: Boolean = true,
+                      adt1: Adt = Type1,
+                      adt2: Adt = Type2(Long.MaxValue)
                     ) extends BaseEntity
+
+sealed trait Adt
+case object Type1 extends Adt
+case class Type2(id: Long) extends Adt
