@@ -102,3 +102,21 @@ import io.applicative.datastore.reflection.Kind
 case class Foo(id: Long) extends BaseEntity
 ```
 In this case, the kind for the class `Foo` will be `JustFoo`
+
+### Installation using sbt
+
+In order to install this package you will need set an extra resolver in `build.sbt`:
+
+```
+resolvers ++= Seq(
+  "applctv-bintray" at "https://dl.bintray.com/applctv/gcp-scala-datastore/"
+)
+```
+
+And then you can add it as a normal sbt dependency:
+
+```
+libraryDependencies ++= Seq(
+  "io.applicative" %% "datastore-scala-wrapper" % "1.0-rc8"
+)
+```
