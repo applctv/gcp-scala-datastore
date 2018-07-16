@@ -21,7 +21,7 @@ class ReflectionHelperSpec extends Specification with Mockito {
       val key = Key(CloudKey.newBuilder("test", "TestClass", "test").build())
       val entity = helper.instanceToDatastoreEntity(key, testInstance, classOf[TestClass])
       entity.hasKey shouldEqual true
-      entity.getNames.size() shouldEqual 13
+      entity.getNames.size() shouldEqual 15
       entity.getLong("byteVal") shouldEqual testInstance.byteVal
       entity.getLong("intVal") shouldEqual testInstance.intVal
       entity.getDouble("doubleVal") shouldEqual testInstance.doubleVal

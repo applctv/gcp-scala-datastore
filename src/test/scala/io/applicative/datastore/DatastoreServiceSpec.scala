@@ -1,7 +1,7 @@
 package io.applicative.datastore
 
 import com.google.cloud.datastore.{IncompleteKey, KeyFactory, Datastore => CloudDataStore, Key => CloudKey}
-import io.applicative.datastore.util.reflection.TestClass
+import io.applicative.datastore.util.reflection.{Kind, TestClass}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -23,6 +23,18 @@ class DatastoreServiceSpec extends Specification with Mockito {
       val key = dataStoreService.newKey[TestClass]()
       key must beEqualTo(Key(mk)).await
     }
+
+    "create a new key with class name as a value if annotation Kind is not present" in { implicit ee: EE =>
+      val clazz = classOf[SomeEntity]
+      val kind = dataStoreService.getKindByClass(clazz)
+      kind must beEqualTo("io.applicative.datastore.SomeEntity")
+    }
+
+    "create a new key with custom value if annotation Kind is present" in { implicit ee: EE =>
+      val clazz = classOf[SomeEntity2]
+      val kind = dataStoreService.getKindByClass(clazz)
+      kind must beEqualTo("CustomKind")
+    }
   }
 
   private def mockKeyFactory() = {
@@ -34,3 +46,7 @@ class DatastoreServiceSpec extends Specification with Mockito {
   }
 
 }
+
+case class SomeEntity(id: Long)
+@Kind(value = "CustomKind")
+case class SomeEntity2(id: Long)

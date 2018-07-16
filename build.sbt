@@ -2,9 +2,9 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc8"
+version := "1.0-rc9"
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.6"
 
 licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
 
@@ -38,7 +38,7 @@ pomExtra := (
 
 
 libraryDependencies ++= {
-  val gcdJavaSDKVersion = "1.4.0"
+  val gcdJavaSDKVersion = "1.36.0"
   val specsVersion = "3.8.8"
 
   Seq(

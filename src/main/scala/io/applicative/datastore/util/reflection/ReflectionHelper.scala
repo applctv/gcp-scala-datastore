@@ -1,5 +1,6 @@
 package io.applicative.datastore.util.reflection
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
 import java.util.Date
 
@@ -142,7 +143,14 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
           .setExcludeFromIndexes(excludeFromIndexes)
           .build()
         builder.set(name, blobValue)
-      case Field(name, value, _) => throw UnsupportedFieldTypeException(value.getClass.getCanonicalName)
+      case Field(name, value: Serializable, excludeFromIndexes) =>
+        val blob = Blob.copyFrom(objectToBytes(value))
+        val blobValue = BlobValue
+          .newBuilder(blob)
+          .setExcludeFromIndexes(excludeFromIndexes)
+          .build()
+        builder.set(name, blobValue)
+      case Field(_, value, _) => throw UnsupportedFieldTypeException(value.getClass.getCanonicalName)
     }
   }
 
@@ -195,7 +203,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
       case OffsetDateTimeClassName => parseOffsetDateTime(entity.getString(fieldName))
       case DatastoreLatLongClassName => entity.getLatLng(fieldName)
       case DatastoreBlobClassName => entity.getBlob(fieldName)
-      case otherClassName => throw UnsupportedFieldTypeException(otherClassName)
+      case other => bytesToObject[Serializable](entity.getBlob(fieldName).toByteArray)
     }
   }
 
@@ -217,16 +225,31 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
       case DatastoreLatLongClassName => LatLng.of(0.0, 0.0)
       case DatastoreBlobClassName => Blob.copyFrom(Array[Byte]())
       case OptionClassName => None
-      case fieldName => throw UnsupportedFieldTypeException(fieldName)
+      case _ => null
     }).map(_.asInstanceOf[Object])
     constructor.newInstance(params: _*).asInstanceOf[E]
   }
 
-  private[datastore] def getClassName(clazz: Class[_]): String = {
+  protected def getClassName(clazz: Class[_]): String = {
     runtimeMirror(clazz.getClassLoader).classSymbol(clazz).fullName
   }
 
-  private[datastore] def getClassName[E : TypeTag](): String = {
+  protected def getClassName[E : TypeTag](): String = {
     typeOf[E].typeSymbol.fullName
+  }
+
+  private def objectToBytes[T <: Serializable](o: T) = {
+    val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(stream)
+    oos.writeObject(o)
+    oos.close()
+    stream.toByteArray
+  }
+
+  private def bytesToObject[T <: Serializable](bytes: Array[Byte]): T = {
+    val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
+    val value = ois.readObject
+    ois.close()
+    value.asInstanceOf[T]
   }
 }

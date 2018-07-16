@@ -2,7 +2,7 @@ package io.applicative.datastore
 
 import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, EntityQuery, KeyFactory, Transaction, Datastore => CloudDataStore, Key => CloudKey}
 import io.applicative.datastore.exception.UnsupportedIdTypeException
-import io.applicative.datastore.util.reflection.ReflectionHelper
+import io.applicative.datastore.util.reflection.{Kind, ReflectionHelper}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -43,7 +43,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
 
   override def add[E <: BaseEntity : TypeTag : ClassTag](entity: E)(implicit ec: ExecutionContext): Future[E] = Future {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKind(clazz)
+    val kind = getKindByClass(clazz)
     val key = createKey(entity.id, kind)
     val dataStoreEntity = instanceToDatastoreEntity(key, entity, clazz)
     cloudDataStore.add(dataStoreEntity)
@@ -147,7 +147,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
 
   private def wrapFetch[E: TypeTag : ClassTag](ids: List[_]): List[Option[E]] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKind(clazz)
+    val kind = getKindByClass(clazz)
     val es = ids.map(createKey(_, kind).key)
     val javaIterable: java.lang.Iterable[CloudKey] = es.asJava
     cloudDataStore
@@ -159,7 +159,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
 
   private def wrapLazyGet[E: TypeTag : ClassTag](ids: List[_]): Iterator[E] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKind(clazz)
+    val kind = getKindByClass(clazz)
     val es = ids.map(createKey(_, kind).key)
     val javaIterable: java.lang.Iterable[CloudKey] = es.asJava
     val scalaIterator = cloudDataStore
@@ -190,12 +190,18 @@ object DatastoreService extends Datastore with ReflectionHelper {
     })
   }
 
-  private def getKind[E: TypeTag : ClassTag]() = {
-    getClassName[E]()
+  private[datastore] def getKind[E: ClassTag]() = {
+    val clazz = extractRuntimeClass[E]()
+    getKindByClass(clazz)
   }
 
-  private def getKind(clazz: Class[_]) = {
-    clazz.getCanonicalName
+  private[datastore] def getKindByClass(clazz: Class[_]): String = {
+    Option(clazz.getDeclaredAnnotation(classOf[Kind])) match {
+      case Some(customKeyAnnotation) if customKeyAnnotation.value() != null && customKeyAnnotation.value().nonEmpty =>
+        customKeyAnnotation.value()
+      case _ =>
+        clazz.getCanonicalName
+    }
   }
 
   private def createKey(id: Any, kind: String) = {
@@ -210,7 +216,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
 
   private def convert[E <: BaseEntity : TypeTag : ClassTag](entities: Seq[E]): Seq[Entity] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKind(clazz)
+    val kind = getKindByClass(clazz)
     entities map { e =>
       val key = createKey(e.id, kind)
       instanceToDatastoreEntity(key, e, clazz)
