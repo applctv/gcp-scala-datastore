@@ -58,7 +58,6 @@ object DatastoreService extends Datastore with ReflectionHelper {
   }
 
   override def add[E <: BaseEntity : TypeTag : ClassTag](ke: Map[Key, E])(implicit ec: ExecutionContext): Future[List[E]] = Future {
-    cloudDataStore.update()
     val clazz = extractRuntimeClass[E]()
     val entities = ke.map { case (k, v) => instanceToDatastoreEntity(k, v, clazz) }
     val es = cloudDataStore.add(entities.toArray: _*)
