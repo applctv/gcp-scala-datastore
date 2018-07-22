@@ -172,7 +172,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
         } else {
           val value = fieldClassName match {
             case OptionClassName =>
-              if (entity.isNull(fieldName)) {
+              if (!entity.contains(fieldName) || entity.isNull(fieldName)) {
                 None
               } else {
                 val genericClassName = member.returnType.typeArgs.head.typeSymbol.fullName
