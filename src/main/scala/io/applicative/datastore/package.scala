@@ -54,7 +54,7 @@ package object query {
     }
 
     private def configureBuilder() = {
-      val kind = extractRuntimeClass[E]().getCanonicalName
+      val kind = DatastoreService.getKind[E]()
       builder.setKind(kind)
       filters match {
         case head :: Nil => builder.setFilter(head)
@@ -75,8 +75,9 @@ package object query {
   private case class OrderInstance(field: String, order: Order)
 
 
-  class SelectClause[E <: BaseEntity : TypeTag : ClassTag] (override protected val builder: Builder
-                                                ) extends Clause[E](builder) {
+  class SelectClause[E <: BaseEntity : TypeTag : ClassTag] (
+                                                             override protected val builder: Builder
+                                                           ) extends Clause[E](builder) {
     override protected val filters: List[PropertyFilter] = List.empty[PropertyFilter]
 
     def where(filter: PropertyFilter): AndSelectClause[E] = {
@@ -85,9 +86,9 @@ package object query {
   }
 
   class AndSelectClause[E <: BaseEntity : TypeTag : ClassTag](
-                                                    override protected val builder: Builder,
-                                                    override protected val filters: List[PropertyFilter]
-                                                  ) extends Clause[E](builder) {
+                                                               override protected val builder: Builder,
+                                                               override protected val filters: List[PropertyFilter]
+                                                             ) extends Clause[E](builder) {
     def and(filter: PropertyFilter) = {
       new AndSelectClause[E](builder, filters :+ filter)
     }
