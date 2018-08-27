@@ -2,7 +2,7 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc9"
+version := "1.0-rc10"
 
 scalaVersion := "2.12.6"
 
@@ -44,7 +44,12 @@ libraryDependencies ++= {
   Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
     "com.google.cloud" % "google-cloud-datastore" % gcdJavaSDKVersion,
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
+    "ch.qos.logback" % "logback-classic" % "1.2.3",
+    "ch.qos.logback" % "logback-core" % "1.2.3",
     "org.specs2" %% "specs2-core" % specsVersion % "test",
     "org.specs2" %% "specs2-mock" % specsVersion % "test"
   )
 }
+
+resolvers += Resolver.mavenLocal

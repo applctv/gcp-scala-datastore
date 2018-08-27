@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.google.cloud.Timestamp
 import com.google.cloud.datastore._
+import com.typesafe.scalalogging.Logger
 import io.applicative.datastore.Key
 import io.applicative.datastore.exception.{MissedTypeParameterException, UnsupportedFieldTypeException}
 import io.applicative.datastore.util.DateTimeHelper
@@ -15,6 +16,7 @@ import scala.reflect.classTag
 import scala.reflect.runtime.universe._
 
 private[datastore] trait ReflectionHelper extends DateTimeHelper {
+  private val log = Logger[ReflectionHelper]
 
   private val ByteClassName = getClassName[Byte]()
   private val IntClassName = getClassName[Int]()
@@ -167,7 +169,9 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
         val field = tt.mirror.reflect(a).reflectField(member)
         val fieldClassName = member.returnType.typeSymbol.fullName
         val fieldName = member.name.toString
+        log.debug("Trying to set actual value of field {} of type {}", fieldName, fieldClassName)
         if (fieldName == "id") {
+          log.debug("Setting id value to {}. Entity key id = {}, name = {}", entity.getKey.getNameOrId, entity.getKey.getId, entity.getKey.getName)
           field.set(entity.getKey.getNameOrId)
         } else {
           val value = fieldClassName match {
@@ -181,6 +185,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
             case className =>
               getValue(className, fieldName, entity)
           }
+          log.debug("Setting field {} of type {} value {}", fieldName, fieldClassName, value)
           field.set(value)
         }
       }
