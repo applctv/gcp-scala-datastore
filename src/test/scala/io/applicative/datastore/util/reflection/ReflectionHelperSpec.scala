@@ -48,6 +48,16 @@ class ReflectionHelperSpec extends Specification with Mockito {
       res shouldEqual testObj
     }
 
+    "convert object of class with id of Key type" in {
+      val parentKey = CloudKey.newBuilder("test", "TestClassWithKeyId", "testParent").build()
+      val key = Key(CloudKey.newBuilder(parentKey, "TestClassWithKeyId", "test").build())
+      val testObj = TestClassWithKeyId(key)
+      val clazz = classOf[TestClassWithKeyId]
+      val entity = helper.instanceToDatastoreEntity(key, testObj, clazz)
+      val res = helper.datastoreEntityToInstance[TestClassWithKeyId](entity, clazz)
+      res shouldEqual testObj
+    }
+
     "create default instance of any class with at least one public constructor" in {
       helper.createDefaultInstance[TestClass1](classOf[TestClass1]) shouldEqual TestClass1(0L, "")
     }
@@ -87,6 +97,7 @@ class ReflectionHelperSpec extends Specification with Mockito {
 
 }
 
+case class TestClassWithKeyId(id: Key, length: Int = 42) extends BaseEntity
 case class TestClassWithStringId(id: String = "testId", size: Int = 1) extends BaseEntity
 case class TestClass1(id: Long, name: String) extends BaseEntity
 case class TestClass2(id: Long, name: Option[String]) extends BaseEntity

@@ -31,6 +31,7 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
   private val ZonedDateTimeClassName = getClassName[ZonedDateTime]()
   private val OffsetDateTimeClassName = getClassName[OffsetDateTime]()
   private val OptionClassName = getClassName[Option[_]]()
+  private val KeyClassName = getClassName[Key]()
 
   private[datastore] def extractRuntimeClass[E: ClassTag](): RuntimeClass = {
     val runtimeClass = classTag[E].runtimeClass
@@ -168,7 +169,11 @@ private[datastore] trait ReflectionHelper extends DateTimeHelper {
         val fieldClassName = member.returnType.typeSymbol.fullName
         val fieldName = member.name.toString
         if (fieldName == "id") {
-          field.set(entity.getKey.getNameOrId)
+          if (fieldClassName == KeyClassName) {
+            field.set(Key(entity.getKey))
+          } else {
+            field.set(entity.getKey.getNameOrId)
+          }
         } else {
           val value = fieldClassName match {
             case OptionClassName =>
