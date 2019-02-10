@@ -208,6 +208,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
       case id: String => getKeyFactory(kind).newKey(id)
       case id: Long => getKeyFactory(kind).newKey(id)
       case id: Int => getKeyFactory(kind).newKey(id)
+      case id: Key => id.key
       case otherId => throw UnsupportedIdTypeException(otherId.getClass.getCanonicalName)
     }
     Key(cloudKey)
