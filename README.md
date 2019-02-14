@@ -117,6 +117,6 @@ And then you can add it as a normal sbt dependency:
 
 ```
 libraryDependencies ++= Seq(
-  "io.applicative" %% "datastore-scala-wrapper" % "1.0-rc8"
+  "io.applicative" %% "datastore-scala-wrapper" % "1.0-rc10"
 )
 ```
