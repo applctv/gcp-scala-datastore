@@ -1,6 +1,7 @@
 package io.applicative.datastore
 
-import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, EntityQuery, KeyFactory, Transaction, Datastore => CloudDataStore, Key => CloudKey}
+import com.google.auth.Credentials
+import com.google.cloud.datastore.{DatastoreOptions, DatastoreReader, Entity, EntityQuery, KeyFactory, KeyQuery, Transaction, Datastore => CloudDataStore, Key => CloudKey}
 import io.applicative.datastore.exception.UnsupportedIdTypeException
 import io.applicative.datastore.util.reflection.{Kind, ReflectionHelper}
 
@@ -10,17 +11,29 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
-object DatastoreService extends Datastore with ReflectionHelper {
+object DatastoreService {
+  lazy val default: Datastore = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
 
-  private var _cloudDataStore: CloudDataStore = DatastoreOptions.getDefaultInstance.getService
+  def apply(
+             projectId: String,
+             namespace: Option[String] = None,
+             host: Option[String] = None,
+             credentials: Option[Credentials]
+           ): Datastore = {
+    val builder = DatastoreOptions.newBuilder()
+      .setProjectId(projectId)
+    namespace.foreach(ns => builder.setNamespace(ns))
+    host.foreach(h => builder.setHost(h))
+    credentials.foreach(c => builder.setCredentials(c))
+    new DatastoreService(builder.build().getService)
+  }
+
+  def apply(cloudDataStore: CloudDataStore): Datastore = new DatastoreService(cloudDataStore)
+}
+
+class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datastore with ReflectionHelper {
 
   private val keyFactories = collection.mutable.Map[String, KeyFactory]()
-
-  private def cloudDataStore = _cloudDataStore
-
-  override private[datastore] def setCloudDataStore(cloudDatastore: CloudDataStore): Unit = {
-    _cloudDataStore = cloudDatastore
-  }
 
   override def newKey[E <: BaseEntity : TypeTag : ClassTag]()(implicit ec: ExecutionContext): Future[Key] = Future {
     val kind = getKind[E]()

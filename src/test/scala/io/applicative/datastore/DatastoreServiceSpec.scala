@@ -7,16 +7,14 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
 
-class DatastoreServiceSpec extends Specification with Mockito {
+class DatastoreServiceSpec(implicit ee: ExecutionEnv) extends Specification with Mockito {
   private val cloudDataStore = mock[CloudDataStore]
-  private val dataStoreService = DatastoreService
-  dataStoreService.setCloudDataStore(cloudDataStore)
+  private val dataStoreService = DatastoreService(cloudDataStore)
   private val testInstance = TestClass()
-  type EE = ExecutionEnv
 
   "DatastoreService should" should {
 
-    "create a new key with specified Kind" in { implicit ee: EE =>
+    "create a new key with specified Kind" in {
       cloudDataStore.newKeyFactory() returns mockKeyFactory()
       val mk = mockKey("TestClass", testInstance.id)
       cloudDataStore.allocateId(any[IncompleteKey]) returns mk
@@ -24,13 +22,13 @@ class DatastoreServiceSpec extends Specification with Mockito {
       key must beEqualTo(Key(mk)).await
     }
 
-    "create a new key with class name as a value if annotation Kind is not present" in { implicit ee: EE =>
+    "create a new key with class name as a value if annotation Kind is not present" in {
       val clazz = classOf[SomeEntity]
       val kind = dataStoreService.getKindByClass(clazz)
       kind must beEqualTo("io.applicative.datastore.SomeEntity")
     }
 
-    "create a new key with custom value if annotation Kind is present" in { implicit ee: EE =>
+    "create a new key with custom value if annotation Kind is present" in {
       val clazz = classOf[SomeEntity2]
       val kind = dataStoreService.getKindByClass(clazz)
       kind must beEqualTo("CustomKind")
