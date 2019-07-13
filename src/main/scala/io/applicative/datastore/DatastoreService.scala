@@ -5,7 +5,6 @@ import io.applicative.datastore.exception.UnsupportedIdTypeException
 import io.applicative.datastore.util.reflection.{Kind, ReflectionHelper}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -61,7 +60,7 @@ object DatastoreService extends Datastore with ReflectionHelper {
     val clazz = extractRuntimeClass[E]()
     val entities = ke.map { case (k, v) => instanceToDatastoreEntity(k, v, clazz) }
     val es = cloudDataStore.add(entities.toArray: _*)
-    es.toList.map(datastoreEntityToInstance[E](_, clazz))
+    es.asScala.toList.map(datastoreEntityToInstance[E](_, clazz))
   }
   override def get[E <: BaseEntity : TypeTag : ClassTag](id: Long)(implicit ec: ExecutionContext): Future[Option[E]] = Future {
     wrapGet[E](id)
