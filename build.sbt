@@ -2,7 +2,7 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc10"
+version := "1.0-rc11"
 
 scalaVersion := "2.12.8"
 
@@ -14,7 +14,7 @@ bintrayRepository := "gcp-scala-datastore"
 
 bintrayVcsUrl := Some("git@github.com:applctv/gcp-scala-datastore.git")
 
-crossScalaVersions := Seq("2.11.11", scalaVersion.value)
+crossScalaVersions := Seq("2.11.11", scalaVersion.value, "2.13.0")
 
 // Publish settings for Maven Central
 publishMavenStyle := true
@@ -38,8 +38,8 @@ pomExtra := (
 
 
 libraryDependencies ++= {
-  val gcdJavaSDKVersion = "1.36.0"
-  val specsVersion = "3.8.8"
+  val gcdJavaSDKVersion = "1.82.0"
+  val specsVersion = "4.6.0"
 
   Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,

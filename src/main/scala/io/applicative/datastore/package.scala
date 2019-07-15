@@ -38,23 +38,23 @@ package object query {
       this
     }
 
-    def asList(implicit ec: ExecutionContext): Future[List[E]] = {
-      val query = configureBuilder().build()
-      DatastoreService.runQueryForList[E](query)
+    def asList(implicit ec: ExecutionContext, ds: DatastoreService): Future[List[E]] = {
+      val query = configureBuilder.build()
+      ds.runQueryForList[E](query)
     }
 
-    def asList(limit: Int, offset: Int)(implicit ec: ExecutionContext): Future[List[E]] = {
-      val query = configureBuilder().setOffset(offset).setLimit(limit).build()
-      DatastoreService.runQueryForList[E](query)
+    def asList(limit: Int, offset: Int)(implicit ec: ExecutionContext, ds: DatastoreService): Future[List[E]] = {
+      val query = configureBuilder.setOffset(offset).setLimit(limit).build()
+      ds.runQueryForList[E](query)
     }
 
-    def asSingle(implicit ec: ExecutionContext): Future[Option[E]] = {
-      val query = configureBuilder().build()
-      DatastoreService.runQueryForSingleOpt[E](query)
+    def asSingle(implicit ec: ExecutionContext, ds: DatastoreService): Future[Option[E]] = {
+      val query = configureBuilder.build()
+      ds.runQueryForSingleOpt[E](query)
     }
 
-    private def configureBuilder() = {
-      val kind = DatastoreService.getKind[E]()
+    private def configureBuilder(implicit ds: DatastoreService) = {
+      val kind = ds.getKind[E]()
       builder.setKind(kind)
       filters match {
         case head :: Nil => builder.setFilter(head)

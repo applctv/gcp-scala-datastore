@@ -7,9 +7,6 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 trait Datastore {
-  // for testing purpose
-  private[datastore] def setCloudDataStore(cloudDatastore: CloudDatastore): Unit
-
   /**
     * Creates a new Key with automatically randomly generated id.
     * @tparam E type of entity. Must be always specified.
@@ -148,5 +145,7 @@ trait Datastore {
     * @tparam E type of entity. Must be always specified.
     */
   def fetch[E <: BaseEntity : TypeTag : ClassTag, K](ids: List[K])(implicit ec: ExecutionContext): Future[List[Option[E]]]
+
+  private[datastore] def getKindByClass(clazz: Class[_]): String
 
 }
