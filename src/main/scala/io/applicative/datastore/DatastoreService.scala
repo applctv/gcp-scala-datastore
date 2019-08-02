@@ -15,13 +15,13 @@ object DatastoreService {
   lazy val default: DatastoreService = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
 
   def apply(
-             projectId: String,
+             projectId: Option[String] = None,
              namespace: Option[String] = None,
              host: Option[String] = None,
              credentials: Option[Credentials]
            ): DatastoreService = {
     val builder = DatastoreOptions.newBuilder()
-      .setProjectId(projectId)
+    projectId.foreach(p => builder.setProjectId(p))
     namespace.foreach(ns => builder.setNamespace(ns))
     host.foreach(h => builder.setHost(h))
     credentials.foreach(c => builder.setCredentials(c))
