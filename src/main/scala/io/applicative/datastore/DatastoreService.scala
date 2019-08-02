@@ -12,14 +12,14 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object DatastoreService {
-  lazy val default: Datastore = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
+  lazy val default: DatastoreService = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
 
   def apply(
              projectId: String,
              namespace: Option[String] = None,
              host: Option[String] = None,
              credentials: Option[Credentials]
-           ): Datastore = {
+           ): DatastoreService = {
     val builder = DatastoreOptions.newBuilder()
       .setProjectId(projectId)
     namespace.foreach(ns => builder.setNamespace(ns))
@@ -28,7 +28,7 @@ object DatastoreService {
     new DatastoreService(builder.build().getService)
   }
 
-  def apply(cloudDataStore: CloudDataStore): Datastore = new DatastoreService(cloudDataStore)
+  def apply(cloudDataStore: CloudDataStore): DatastoreService = new DatastoreService(cloudDataStore)
 }
 
 class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datastore with ReflectionHelper {
