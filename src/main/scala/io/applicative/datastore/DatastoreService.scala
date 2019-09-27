@@ -12,26 +12,27 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object DatastoreService {
-  lazy val default: Datastore = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
+  lazy val default: DatastoreService = new DatastoreService(DatastoreOptions.getDefaultInstance.getService)
 
   def apply(
-             projectId: String,
+             projectId: Option[String] = None,
              namespace: Option[String] = None,
              host: Option[String] = None,
-             credentials: Option[Credentials]
-           ): Datastore = {
+             credentials: Option[Credentials] = None,
+             kind: Option[String] = None
+           ): DatastoreService = {
     val builder = DatastoreOptions.newBuilder()
-      .setProjectId(projectId)
+    projectId.foreach(p => builder.setProjectId(p))
     namespace.foreach(ns => builder.setNamespace(ns))
     host.foreach(h => builder.setHost(h))
     credentials.foreach(c => builder.setCredentials(c))
-    new DatastoreService(builder.build().getService)
+    new DatastoreService(builder.build().getService, kind)
   }
 
-  def apply(cloudDataStore: CloudDataStore): Datastore = new DatastoreService(cloudDataStore)
+  def apply(cloudDataStore: CloudDataStore): DatastoreService = new DatastoreService(cloudDataStore)
 }
 
-class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datastore with ReflectionHelper {
+class DatastoreService(private val cloudDataStore: CloudDataStore, kind: Option[String] = None) extends Datastore with ReflectionHelper {
 
   private val keyFactories = collection.mutable.Map[String, KeyFactory]()
 
@@ -55,7 +56,7 @@ class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datas
 
   override def add[E <: BaseEntity : TypeTag : ClassTag](entity: E)(implicit ec: ExecutionContext): Future[E] = Future {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKindByClass(clazz)
+    val kind = getKind[E]()
     val key = createKey(entity.id, kind)
     val dataStoreEntity = instanceToDatastoreEntity(key, entity, clazz)
     cloudDataStore.add(dataStoreEntity)
@@ -158,7 +159,7 @@ class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datas
 
   private def wrapFetch[E: TypeTag : ClassTag](ids: List[_]): List[Option[E]] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKindByClass(clazz)
+    val kind = getKind[E]()
     val es = ids.map(createKey(_, kind).key)
     val javaIterable: java.lang.Iterable[CloudKey] = es.asJava
     cloudDataStore
@@ -170,7 +171,7 @@ class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datas
 
   private def wrapLazyGet[E: TypeTag : ClassTag](ids: List[_]): Iterator[E] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKindByClass(clazz)
+    val kind = getKind[E]()
     val es = ids.map(createKey(_, kind).key)
     val javaIterable: java.lang.Iterable[CloudKey] = es.asJava
     val scalaIterator = cloudDataStore
@@ -201,9 +202,11 @@ class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datas
     })
   }
 
-  private[datastore] def getKind[E: ClassTag]() = {
-    val clazz = extractRuntimeClass[E]()
-    getKindByClass(clazz)
+  private[datastore] def getKind[E: ClassTag](): String = {
+    kind.getOrElse {
+      val clazz = extractRuntimeClass[E]()
+      getKindByClass(clazz)
+    }
   }
 
   private[datastore] def getKindByClass(clazz: Class[_]): String = {
@@ -228,7 +231,7 @@ class DatastoreService(private val cloudDataStore: CloudDataStore) extends Datas
 
   private def convert[E <: BaseEntity : TypeTag : ClassTag](entities: Seq[E]): Seq[Entity] = {
     val clazz = extractRuntimeClass[E]()
-    val kind = getKindByClass(clazz)
+    val kind = getKind[E]()
     entities map { e =>
       val key = createKey(e.id, kind)
       instanceToDatastoreEntity(key, e, clazz)
