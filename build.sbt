@@ -2,7 +2,7 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc12"
+version := "1.0-rc13"
 
 scalaVersion := "2.12.8"
 crossScalaVersions := Seq("2.11.12", "2.12.8")
