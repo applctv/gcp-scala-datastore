@@ -16,6 +16,10 @@ sonatypeCredentialHost := "central.sonatype.com"
 publishTo := sonatypePublishToBundle.value
 credentials += Credentials(Path.userHome / ".sbt" / "sonatype_central_credentials")
 
+// GPG Signing configuration
+usePgpKeyHex("EC0E377F561C86A620619E335B78C65506F9E48D")
+pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray)
+
 publishMavenStyle := true
 
 scmInfo := Some(
