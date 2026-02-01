@@ -32,6 +32,8 @@ object DatastoreService {
   def apply(cloudDataStore: CloudDataStore): DatastoreService = new DatastoreService(cloudDataStore)
 }
 
+import javax.inject.Inject
+
 class DatastoreService(private val cloudDataStore: CloudDataStore, kind: Option[String] = None) extends Datastore with ReflectionHelper {
 
   private val keyFactories = collection.mutable.Map[String, KeyFactory]()
