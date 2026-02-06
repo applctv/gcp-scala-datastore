@@ -2,10 +2,10 @@ name := "datastore-scala-wrapper"
 
 organization := "io.applicative"
 
-version := "1.0-rc13"
+version := "1.0-rc14"
 
 scalaVersion := "2.12.8"
-crossScalaVersions := Seq("2.11.12", "2.12.8")
+crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.12")
 
 licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
 
@@ -52,6 +52,7 @@ libraryDependencies ++= {
 
   Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6",
     "com.google.cloud" % "google-cloud-datastore" % gcdJavaSDKVersion,
     "org.specs2" %% "specs2-core" % specsVersion % "test",
     "org.specs2" %% "specs2-mock" % specsVersion % "test"

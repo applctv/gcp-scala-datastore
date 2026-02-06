@@ -6,7 +6,7 @@ import io.applicative.datastore.exception.UnsupportedIdTypeException
 import io.applicative.datastore.util.reflection.{Kind, ReflectionHelper}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -32,7 +32,7 @@ object DatastoreService {
   def apply(cloudDataStore: CloudDataStore): DatastoreService = new DatastoreService(cloudDataStore)
 }
 
-import javax.inject.Inject
+
 
 class DatastoreService(private val cloudDataStore: CloudDataStore, kind: Option[String] = None) extends Datastore with ReflectionHelper {
 

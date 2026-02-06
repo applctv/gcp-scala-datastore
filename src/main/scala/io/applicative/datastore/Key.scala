@@ -2,7 +2,7 @@ package io.applicative.datastore
 
 import com.google.cloud.datastore.{PathElement, Key => CloudKey}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 final case class Key(key: CloudKey) {
   assert(key != null)
